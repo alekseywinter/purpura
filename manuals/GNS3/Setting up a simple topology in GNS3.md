@@ -1,3 +1,5 @@
+// FIXME: на русский
+
 ```mermaid  
 graph LR  
 R[router<br>192.168.0.1]  

@@ -1,28 +1,28 @@
-1. Сначала обновляем список репозиториев Debian:
-`sudo apt update`
+1. Сначала обновляем список репозиториев Debian:<br>`sudo apt update`
 
-2. Для полного счастья можно добавить все возможные репозитории в файл `/etc/apt/sources.list`:
-#`Stable Debian`
+2. Для полного счастья можно добавить все возможные репозитории в файл<br> `/etc/apt/sources.list`:<br><br>
+
+    #`Stable Debian`
 `deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware`
 `deb-src http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware`
 
-`#Security Updates`
+    `#Security Updates`
 `deb http://deb.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware`
 `deb-src http://deb.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware`
 
-`#Stable Updates`
+    `#Stable Updates`
 `deb http://deb.debian.org/debian bookworm-updates main contrib non-free non-free-firmware`
 `deb-src http://deb.debian.org/debian bookworm-updates main contrib non-free non-free-firmware`
 
-`#Backports`
+    `#Backports`
 `deb http://deb.debian.org/debian bookworm-backports main contrib non-free non-free-firmware`
 `deb-src http://deb.debian.org/debian bookworm-backports main contrib non-free non-free-firmware`
 
-3. Затем обновляем систему:
+3. Затем обновляем систему:<br>
 `sudo apt update`
 `sudo apt upgrade`
 
-После этого устанавливаем нужные (и не очень) пакеты и их зависимости:
+    После этого устанавливаем нужные (и не очень) пакеты и их зависимости:<br>
 `sudo apt install -y \`
 `python3 python3-venv python3-pip \`
 `build-essential cmake libelf-dev \`
@@ -33,7 +33,7 @@
 `ca-certificates mesa-utils curl git libpcap-dev \`
 `ubridge dynamips`
 
-4. Если по какой то причине `ubridge` и `dynamips` не установились из репозитория Debian придется собирать их вручную.:
+4. Если по какой то причине `ubridge` и `dynamips` не установились из репозитория Debian придется собирать их вручную:<br>
 `cd /tmp`
 `git clone https://github.com/GNS3/dynamips.git`
 `cd dynamips`
@@ -42,26 +42,26 @@
 `cmake ..`
 `make`
 
-`cd /tmp`
+    `cd /tmp`
 `git clone https://github.com/GNS3/ubridge.git`
 `cd ubridge`
 `make`
 `sudo make install`
 `ubridge -v`
 
-5. Дальше создаем виртуальное окружение для исполняемых фалов GNS3:
+5. Дальше создаем виртуальное окружение для исполняемых фалов GNS3:<br>
 `python3 -m venv ~/gns3`
 `source ~/gns3/bin/activate`
 
-Проверяем где расположен `python`:
+    Проверяем где расположен `python`:
 `which python`
 ответ должен выглядеть примерно так:
 `/home/ИМЯ_ПОЛЬЗОВАТЕЛЯ/gns3/bin/python`
 
-6. Устанавливаем графический интерфейс и сервер, а так же их зависимости:
+6. Устанавливаем графический интерфейс и сервер, а так же их зависимости:<br>
 `pip install "sip<6" "PyQt5<5.15" gns3-server==3.0.5 gns3-gui==3.0.5`
 
-Проверяем что все нужные компоненты установлены:
+    Проверяем что все нужные компоненты установлены:<br>
 `python -c "import PyQt5; print('PyQt OK')"`  
 `python -c "from PyQt5 import sip; print('SIP OK')"`
 
@@ -71,9 +71,9 @@
 `source ~/gns3/bin/activate`
 `gns3`
 
-Если программа запускается без ошибок то выполняем финальные шаги:
+    Если программа запускается без ошибок то выполняем финальные шаги:<br>
 `sudo usermod -aG libvirt,kvm,wireshark,dialout,plugdev $USER`
 
-Настраиваем сеть для виртуальных машин GNS3:
+    Настраиваем сеть для виртуальных машин GNS3:<br>
 `sudo virsh net-start default`
 `sudo virsh net-autostart default`

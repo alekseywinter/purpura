@@ -1,3 +1,5 @@
+// FIXME: сделать!
+
 `Usage`
   `ping [options] <destination>`
 
