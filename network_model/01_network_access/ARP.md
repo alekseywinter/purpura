@@ -1,116 +1,486 @@
-**Протокол ARP**<br>
-Протокол компьютерной сети канального и сетевого уровней, предназначенный для определения MAC-адреса другого компьютера по известному IP-адресу.<br><br>*Формат ARP- пакета*
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;margin:0px auto;}
-.tg td{border-color:black;border-style:solid;border-width:1px;
-  overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg th{border-color:black;border-style:solid;border-width:1px;
-  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-baqh{text-align:center;vertical-align:top}
-.tg .tg-amwm{font-weight:bold;text-align:center;vertical-align:top}
-.tg {
-  border-collapse: collapse;
-  border-spacing: 0;
-  margin: 0px auto;
-  width: 90%;
-}
-</style>
-<table class="tg" ><thead>
-  <tr>
-    <th class="tg-amwm" colspan="2">0-7</th>
-    <th class="tg-amwm" colspan="2">8-15</th>
-    <th class="tg-amwm" colspan="4">16-31</th>
-  </tr></thead>
-<tbody>
-  <tr>
-    <td class="tg-baqh" colspan="4"><span style="font-weight:400;font-style:normal"><code>ar$hrd</code><br>Тип канального уровня↓ </span></td>
-    <td class="tg-baqh" colspan="4"><span style="font-weight:400;font-style:normal"><code>ar$pro</code><br>Тип протокола сетевого уровня, для которого выполняется ARP- запрос↑</span></td>
-  </tr>
-  <tr>
-    <td class="tg-baqh" colspan="2"><span style="font-weight:400;font-style:normal"><code>ar$hln</code><br>Длина аппаратного адреса канального уровня в байтах</span></td>
-    <td class="tg-baqh" colspan="2"><span style="font-weight:400;font-style:normal"><code>ar$pln</code><br>Длина адреса протокола сетевого уровня в байтах</span></td>
-    <td class="tg-baqh" colspan="4"><span style="font-weight:400;font-style:normal"><code>ar$op</code><br>Код ARP- операции</span></td>
-  </tr>
-  <tr>
-    <td class="tg-baqh" colspan="8"><span style="font-weight:400;font-style:normal"><code>ar$sha</code><br>Аппаратный адрес отправителя пакета</span></td>
-  </tr>
-  <tr>
-    <td class="tg-baqh" colspan="8"><span style="font-weight:400;font-style:normal"><code>ar$spa</code><br>Протокольный адрес отправителя пакета</span></td>
-  </tr>
-  <tr>
-    <td class="tg-baqh" colspan="8"><span style="font-weight:400;font-style:normal"><code>ar$tha</code><br>Аппаратный адрес получателя пакета</span></td>
-  </tr>
-  <tr>
-    <td class="tg-baqh" colspan="8"><span style="font-weight:400;font-style:normal"><code>ar$tpa</code><br>Протокольный адрес получателя пакета</span></td>
-  </tr>
-</tbody></table><br>
-Host A                                   Host B
+<b><h2>Протокол ARP (Address Resolution Protocol)</h2></b><h3>Описание (RFC 826)</h3>
+ARP (Address Resolution Protocol) — это протокол сетевого уровня (в модели TCP/IP) или уровня «2.5» (в модели OSI)*, предназначенный для динамического сопоставления логических IP-адресов с физическими MAC-адресами в широковещательных сетях (Ethernet).<br>
+Стандарт был зафиксирован в 1982 году в RFC 826 и с тех пор остается фундаментальным механизмом работы сетей IPv4. Без ARP передача данных по Ethernet была бы невозможна, так как сетевая карта «не понимает» IP-адреса и требует физический адрес целевого устройства для формирования кадра.<br><br>
+<i>*Вопрос об уровне ARP — это предмет давних споров среди сетевых инженеров. Ответ зависит от того, какую модель (OSI или TCP/IP) вы берете за основу.</i><br>
+Короткий ответ: Это протокол «уровня 2.5».<br>
+<li><i>С точки зрения модели OSI:</i><br>
+В строгой семиуровневой модели OSI протокол ARP находится между 2-м и 3-м уровнями.<br>
+    Почему не 2-й (канальный)? Потому что ARP оперирует IP-адресами (адресами 3-го уровня). Чистый 2-й уровень (Ethernet) «не знает», что такое IP.<br>
+    Почему не 3-й (сетевой)? Потому что пакет ARP не имеет IP-заголовка и инкапсулируется напрямую в кадр Ethernet (EtherType 0x0806). Он не может маршрутизироваться — ARP-запрос никогда не покидает пределы своей подсети (L2-сегмента).<br>
+    <b>Вердикт для OSI: протокол канального уровня, обслуживающий сетевой уровень. Часто его называют L2+.</b><br><br>
+<li><i>С точки зрения модели TCP/IP:</i><br>
+В оригинальной модели TCP/IP (RFC 1122) уровни определены менее жестко, чем в OSI и определяются по функциональному назначению. Задача ARP — обеспечить работу IP-протокола, поэтому он является частью межсетевого инструментария.<br>
+    <b>Вердикт для TCP/IP: ARP относится к Сетевому уровню (Internet Layer).</b><br><br>
+    Итак, ключевые характеристики протокола:<br>
+    <li>Сфера действия: ограничена одним широковещательным доменом (L2-сегментом). ARP-запросы не проходят через маршрутизаторы.
+    <li>Инкапсуляция: Пакет ARP вкладывается непосредственно в кадр Ethernet. Он не использует заголовки IP или транспортные протоколы (TCP/UDP).
+    <li>Тип кадра (EtherType): 0x0806.<br><br>
 
-IP packet → needs MAC
-   │
-   │ ARP Probe (broadcast)
-   │ SPA = 0.0.0.0
-   │ TPA = 192.168.1.5
-   │──────────────────────────────────────►
-   │
-   │ (если IP занят — Host B отвечает)
-   │ ARP Reply
-   │◄──────────────────────────────────────
-   │
-   │ ARP Request (broadcast)
-   │ Who has 192.168.1.5?
-   │ Tell 192.168.1.10
-   │──────────────────────────────────────►
-   │
-   │ ARP Reply (unicast)
-   │◄──────────────────────────────────────
-   │ 192.168.1.5 is at MAC_B
-   │
-Send Ethernet frame<br><br>
-<br>
-<i>Типы ARP- запросов</i><br><br>
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;margin:0px auto;}
-.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-fymr{border-color:inherit;font-weight:bold;text-align:left;vertical-align:top}
-.tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}
-</style>
-<table class="tg"><thead>
+<h3>Структура пакета</h3>
+Согласно спецификации RFC 826, пакет ARP имеет фиксированный набор полей, который позволяет протоколу быть универсальным для различных типов оборудования и сетевых протоколов:<br><br>
+<table><thead>
   <tr>
-    <th class="tg-fymr">Тип</th>
-    <th class="tg-fymr">Значение</th>
+    <th></th>
+    <th align="center">0-7 бит</th>
+    <th align="center">8-15 бит</th>
+    <th align="center">16-31 бит</th>
   </tr></thead>
 <tbody>
   <tr>
-    <td class="tg-0pky"><code>ARP Request</td>
-    <td class="tg-0pky">Запрос MAC-адреса по IP. Особенности: отправляется broadcast с кодом поля <code>ar$op = 1</code><br>Цель — узнать MAC</td>
+    <td align="center"><b>0-3 байт</td>
+    <td colspan="2" align="center">hwtype</td>
+    <td align="center">ptype</td>
   </tr>
   <tr>
-    <td class="tg-0pky"><code>ARP Reply</td>
-    <td class="tg-0pky">Ответ на ARP запрос</td>
+    <td align="center"><b>4-7 байт</td>
+    <td align="center">hwlen</td>
+    <td align="center">plen</td>
+    <td align="center">op</td>
   </tr>
   <tr>
-    <td class="tg-0pky"><code>Gratuitous ARP</td>
-    <td class="tg-0pky">хост объявляет свой IP → MAC</td>
+    <td align="center"><b>8-13 байт</td>
+    <td colspan="3" align="center">hwsrc</td>
   </tr>
   <tr>
-    <td class="tg-0pky"><code>ARP Announcement</td>
-    <td class="tg-0pky">частный случай Gratuitous ARP</td>
+    <td align="center"><b>14-17 байт</td>
+    <td colspan="3" align="center">psrc</td>
   </tr>
   <tr>
-    <td class="tg-0pky"><code>ARP Probe</td>
-    <td class="tg-0pky">проверка свободен ли IP</td>
+    <td align="center"><b>18-23 байт</td>
+    <td colspan="3" align="center">hwdst</td>
   </tr>
   <tr>
-    <td class="tg-0pky"><code>Proxy ARP</td>
-    <td class="tg-0pky">маршрутизатор отвечает за другой хост</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky"><code>Reverse ARP (RARP)</td>
-    <td class="tg-0pky">использовался раньше для diskless машин.</td>
+    <td align="center"><b>24-27 байт</td>
+    <td colspan="3" align="center">pdst</td>
   </tr>
 </tbody>
+</table><br>
+<i>*Тонкий момент: «Абстракция адресов»</i><br>
+В RFC 826 автор (Дэвид Пламмер) подчеркивает, что длина адресов (hwlen и plen) берется из самого пакета. Это позволяет протоколу работать, например, с IPv6 (теоретически) или старыми сетями типа Token Ring без изменения логики работы, просто меняя цифры длин.<br><br>
+<i>Проблема выравнивания (Padding):</i><br> Минимальный размер кадра Ethernet — 64 байта. Пакет ARP для IPv4 занимает всего 28 байт. Это значит, что при передаче сетевая карта добавит к нему «мусорные» байты (padding), чтобы дотянуть до минимума.<br><br>
+<h3>Алгоритм работы</h3>
+Логика работы ARP строится на простом цикле, который инициируется каждый раз, когда узлу нужно отправить IP-пакет, но в его локальной таблице (ARP-кэше) отсутствует MAC-адрес получателя.<br>
+Согласно RFC 826, процесс разделен на пять ключевых этапов:<br><br>
+<table border="1"><tbody>
+  <tr>
+    <td><b>Проверка кэша и инициация</b><br>
+Перед отправкой данных узел проверяет свою внутреннюю таблицу. Если запись для целевого IP уже существует, процесс завершается мгновенно. Если записи нет, узел формирует ARP-пакет с кодом операции 1 (Request).</td>
+  </tr>
+  <tr>
+    <td><b>Широковещательный запрос (Broadcast)</b><br>
+Так как отправитель не знает, где находится цель, он упаковывает ARP-запрос в Ethernet-кадр с адресом назначения FF:FF:FF:FF:FF:FF.
+Этот кадр получают и обрабатывают абсолютно все устройства в данном сегменте сети (VLAN).</td>
+  </tr>
+  <tr>
+    <td><b>Фильтрация и обновление у получателей</b><br>
+Каждое устройство, получившее запрос, выполняет следующую проверку: «Является ли мой IP-адрес тем, который ищет отправитель (Target Protocol Address)?»<br><br>
+<i>Нюанс из RFC: даже если узел не является целью, он проверяет, есть ли у него в кэше запись об отправителе. Если есть — он обновляет её актуальным MAC-адресом отправителя, чтобы избежать устаревания данных.</i><br><br>
+Если узел не является целью и записи об отправителе нет — пакет просто отбрасывается.</td>
+  </tr>
+  <tr>
+    <td><b>Формирование ответа (Unicast Reply)</b><br> Узел, чей IP совпал с запросом, выполняет два действия: Вносит (или обновляет) данные отправителя в свой ARP-кэш. Формирует ARP-пакет с кодом операции 2 (Reply).<br><br><i>Важный момент: ответ отправляется адресно (Unicast), так как MAC-адрес инициатора уже известен из поля Sender Hardware Address пришедшего запроса.</i></td>
+  </tr>
+  <tr>
+    <td><b>Завершение обмена</b><br>
+Инициатор получает ответ, сохраняет пару IP-MAC в свою таблицу и приступает к отправке накопленных IP-пакетов, которые ожидали разрешения адреса.</td>
+  </tr>
+</tbody>
+</table><br>
+<h3>ARP-кэш</h3>
+Чтобы не засорять сеть постоянными запросами, используется таблица соответствия (кэш). Посмотреть её в Windows/Linux можно командой:<code>arp -a</code><br><br>
+<i>Нюансы реализации (из RFC 1122):</i><br>
+    Тайм-аут: записи в кэше не вечны. Обычно они живут от 2 до 20 минут (в зависимости от операционной системы).<br>
+    Очередь: пока идет ARP-запрос, система должна держать в памяти хотя бы один последний IP-пакет, который спровоцировал этот запрос.<br><br>
+<h3>ARP Probe и ARP Announcement (RFC 5227)</h3>
+RFC 5227 (IPv4 Address Conflict Detection) — это важнейшее дополнение к классическому ARP. Если RFC 826 описывает, как найти соседа, то RFC 5227 описывает, как узел должен вести себя при получении нового IP-адреса, чтобы не «сломать» сеть при наличии конфликтов.<br>
+Здесь вводятся два ключевых понятия: ARP Probe и ARP Announcement<br>
+<h4>Алгоритм предотвращения конфликтов (ACD)</h4>
+Когда интерфейс получает IP-адрес (через DHCP или статически), он не имеет права сразу начать его использовать. Он должен пройти проверку.<br><br>
+<table><tbody>
+  <tr>
+    <td><b>ARP Probe (Зондирование)</b><br>
+Узел отправляет запрос, чтобы выяснить: «Есть ли кто-то в сети с этим адресом?».<br>
+    Особенность пакета: Поле Sender Protocol Address (IP отправителя) заполняется нулями (0.0.0.0).<br>
+    Зачем это нужно: Чтобы не «отравить» ARP-кэши других узлов. Если бы мы указали свой новый IP, а он оказался бы конфликтным, другие устройства запомнили бы наш MAC-адрес вместо адреса законного владельца.<br>
+    Повторы: Согласно стандарту, узел должен отправить несколько таких запросов (обычно 3) с коротким интервалом.</td>
+  </tr>
+  <tr>
+    <td><b>Ожидание и реакция</b><br>
+    Если пришел ответ (ARP Reply): Конфликт обнаружен. Узел обязан отказаться от использования этого IP и сообщить об ошибке (например, вывести системное уведомление).<br>
+    Если пришел чужой ARP Probe на этот же IP: Значит, два устройства одновременно пытаются занять один адрес. Оба должны прекратить попытки.</td>
+  </tr>
+  <tr>
+    <td><b>ARP Announcement (Объявление)</b><br>
+Если после серии зондов ответов не последовало, узел официально занимает адрес. Он рассылает ARP Announcement (часто называемый Gratuitous ARP — «добровольный ARP»).<br>
+    Особенность пакета: <br>
+    Это стандартный запрос, где и в поле отправителя (Sender), и в поле получателя (Target) указан собственный IP-адрес узла.
+    Цели две:
+    <li>Окончательно убедиться в отсутствии конфликтов.
+    <li>Заставить всех соседей обновить свои таблицы (если у них осталась старая запись для этого IP, привязанная к другому MAC-адресу).</td>
+  </tr>
+</tbody>
+</table>
+<h4>Таблица отличий: RFC 826 vs RFC 5227</h4>
+<table><tbody>
+  <tr>
+    <td><b>Характеристика</b></td>
+    <td><b>Стандартный ARP (RFC 826)</b></td>
+    <td><b>ARP Probe (RFC 5227)</b></td>
+  </tr>
+  <tr>
+    <td><b>Цель</b></td>
+    <td>Найти MAC-адрес соседа</td>
+    <td>Проверить свой IP на конфликт</td>
+  </tr>
+  <tr>
+    <td><b>IP отправителя</b></td>
+    <td>Реальный IP узла</td>
+    <td>0.0.0.0</td>
+  </tr>
+  <tr>
+    <td><b>IP получателя</b></td>
+    <td>IP соседа</td>
+    <td>Свой будущий IP</td>
+  </tr>
+  <tr>
+    <td><b>Влияние на кэш</b></td>
+    <td>Обновляет кэш у всех получателей</td>
+    <td>Не влияет на чужие таблицы</td>
+  </tr>
+</tbody>
+</table><br>
+<h3>Proxy ARP (RFC 1027)</h3>
+Proxy ARP — это технология, при которой сетевое устройство (обычно маршрутизатор) отвечает на ARP-запрос, предназначенный для другого узла, подставляя свой собственный MAC-адрес.<br>
+Согласно RFC 1027, маршрутизатор «притворяется» целевым узлом, чтобы обеспечить связь между устройствами, которые логически находятся в одной подсети, но физически разделены маршрутизатором.<br>
+<h4>Механизм работы: «Ложь во благо»</h4>
+Представьте ситуацию: узел А хочет отправить пакет узлу Б.<br>
+    <li>Узел А считает, что узел Б находится в той же локальной сети (из-за неправильной маски подсети или специфической топологии).
+    <li>На самом деле узел Б находится за маршрутизатором в другом сегменте.<br><br>
+    Алгоритм действий:<br>
+    <table border="1"><tbody>
+  <tr>
+    <td><b>Запрос:</b><br> Узел А рассылает широковещательный запрос: «Кто такой IP узла Б? Сообщите мне свой MAC».</td>
+  </tr>
+  <tr>
+    <td><b>Молчание:</b><br> Узел Б не слышит этот запрос, так как он находится за пределами широковещательного домена.</td>
+  </tr>
+  <tr>
+    <td><b>Перехват:</b><br> Маршрутизатор, разделяющий эти сети, видит запрос и понимает, что он «знает», как добраться до узла Б.</td>
+  </tr>
+  <tr>
+    <td><b>Ответ (Proxy):</b><br> Маршрутизатор отправляет ARP-ответ узлу А, но в поле Sender Hardware Address указывает свой собственный MAC-адрес.</td>
+  </tr>
+  <tr>
+    <td><b>Доставка:</b><br> Узел А радостно отправляет данные на MAC маршрутизатора. Тот принимает их и пересылает (маршрутизирует) дальше узлу Б.</td>
+  </tr>
+</tbody>
+</table>
+<h4>Зачем это нужно?</h4>
+В современной сетевой инженерии Proxy ARP чаще всего используется в трех сценариях:<br>
+    <li>Скрытие топологии: Позволяет объединить несколько физических сегментов сети так, чтобы для конечных хостов они выглядели как одна большая плоская сеть.<br>
+    <li>Работа со старым оборудованием: Если на старом компьютере нельзя настроить шлюз по умолчанию (Default Gateway), Proxy ARP позволяет ему общаться с внешним миром, просто отправляя ARP-запросы на любые IP.<br>
+    <li>VPN-подключения: Некоторые типы VPN (например, работающие на канальном уровне) используют Proxy ARP, чтобы удаленный клиент «казался» находящимся внутри локального офисного сегмента.<br>
+<h4>Подводные камни и нюансы</h4>
+Хотя RFC 1027 описывает это как полезную функцию, у Proxy ARP есть существенные минусы, о которых стоит упомянуть в статье:
+    <li>Увеличение ARP-таблиц: Хосты начинают хранить в кэше MAC-адрес маршрутизатора для сотен различных IP-адресов. Это забивает память.<br>
+    <li>Безопасность: Proxy ARP может маскировать ошибки в конфигурации сети. Вместо того чтобы исправить маски подсетей, администраторы полагаются на «магию» маршрутизатора.<br>
+    <li>Риск петель (Loops): Если в сети несколько маршрутизаторов с включенным Proxy ARP, они могут начать бесконечно отвечать друг другу, создавая лавину трафика.<br><br>
+    <i>Совет для руководства</i>: hа многих современных маршрутизаторах (например, Cisco) Proxy ARP включен по умолчанию. Для повышения безопасности и прозрачности сети его часто рекомендуют отключать командой no <code>ip proxy-arp</code><br><br>
+    <h3>Безопасность и архитектурные недостатки: RFC 4907</h3>
+    Если предыдущие RFC описывали, как заставить ARP работать, то RFC 4907 («Architectural Implications of Link Layer Address Resolution») — это документ-рефлексия. Он анализирует, почему протокол, созданный в «эпоху доверия» 80-х, стал главной головной болью безопасности в современных локальных сетях.<br><br>
+<b>Главный порок: Отсутствие состояния (Statelessness)</b><br>
+Согласно анализу в RFC 4907, корень всех проблем ARP — его «забывчивость».
+    <li>Проблема: Узлы не хранят историю своих запросов. Если компьютер получает ARP Reply, он верит ему на слово, даже если он никогда не отправлял соответствующий запрос.
+    <li>Следствие: Это позволяет проводить атаку ARP Spoofing (подмена) или ARP Poisoning (отравление кэша).<br><br>
+<b>Механика атаки (Man-in-the-Middle)</b><br>
+Злоумышленник рассылает фальшивые ARP-ответы (Unsolicited ARP Replies):<br>
+    <li>Жертве он говорит: «Я — это Шлюз (Router), вот мой MAC-адрес».
+    <li>Шлюзу он говорит: «Я — это Жертва, вот мой MAC-адрес».
+    <li>Результат: Весь трафик между пользователем и интернетом начинает проходить через компьютер атакующего.<br><br>
+<i>Почему это до сих пор работает? (Нюансы из RFC)</i>:<br>
+В документе подчеркивается несколько архитектурных особенностей, которые делают атаку эффективной:<br>
+    <li>Обновление по любому пакету: Большинство ОС обновляют свой кэш, просто «подслушав» любой чужой ARP-пакет в сети (даже если он им не предназначался).
+    <li>Последний ответ — истинный: Если прислать 100 правильных ответов и 1 фальшивый, в кэше останется именно фальшивый (последний по времени).<br><br>
+<h4>Рекомендации по защите</h4>
+RFC 4907 и сопутствующие документы предлагают несколько уровней защиты, которые стоит упомянуть:<br>
+    <li>Статические записи: Команда <code>arp -s</code> позволяет жестко закрепить MAC за IP. Это надежно, но абсолютно не масштабируемо в больших сетях.<br>
+    <li>DAI (Dynamic ARP Inspection): Функция умных коммутаторов. Коммутатор сверяет ARP-пакеты с базой данных (выданной DHCP) и отбрасывает поддельные. Это современный стандарт защиты.<br>
+    <li>Переход на IPv6 (SEND): В RFC упоминается, что в IPv6 эта проблема решается через SEcure Neighbor Discovery (SEND) — использование криптографии для подписи сообщений.<br><br>
+    <h3>Эволюция и закат ARP в IPv6 (RFC 4861)</h3>
+    В протоколе IPv6 от ARP отказались полностью. Его функции взял на себя NDP (Neighbor Discovery Protocol), описанный в RFC 4861. Это не просто смена названия, а фундаментальный архитектурный сдвиг.<br>
+    Почему ARP заменили? Авторы IPv6 проанализировали слабые места ARP и внесли три радикальных изменения:<br><br>
+<i>Уход от широковещания (Broadcast -> Multicast)</i><br>
+    <li>Проблема ARP: Когда узел ищет соседа через ARP, запрос получают все устройства в сети. Это создает лишнюю нагрузку («шум») на сетевые карты всех хостов.<br>
+    <li>Решение в RFC 4861: NDP использует Multicast (групповую рассылку). Запрос отправляется на специальный адрес «Solicited-Node Multicast», который слушает только целевой узел (и те, чьи IP очень похожи). Остальные хосты даже не прерывают работу своего процессора на этот пакет.<br>
+<i>Инкапсуляция в ICMPv6 (Унификация)</i><br>
+<li>Проблема ARP: Как мы выяснили, ARP — это «протокол-сирота» без собственного уровня. Ему нужны свои EtherType, свои форматы кадров.<br>
+<li>Решение в RFC 4861: Сообщения NDP (Neighbor Solicitation и Neighbor Advertisement) — это обычные пакеты ICMPv6. Это упрощает обработку протокола и позволяет использовать стандартные механизмы безопасности IP.<br>
+<i>Встроенная безопасность (SEND)</i>
+<li>Проблема ARP: Абсолютная доверчивость (RFC 4907).<br>
+<li>Решение: Поскольку NDP базируется на ICMPv6, к нему можно прикрутить SEcure Neighbor Discovery (SEND). Это позволяет подписывать сообщения криптографически, полностью исключая возможность ARP-спуфинга в его классическом виде.<br>
+<h4>Сводная таблица: ARP vs NDP</h4>
+<table><tbody>
+  <tr>
+    <td><b>Функция</b></td>
+    <td><b>ARP (IPv4, RFC 826)</b></td>
+    <td><b>NDP (IPv6, RFC 4861)</b></td>
+  </tr>
+  <tr>
+    <td><b>Тип рассылки</b></td>
+    <td>Broadcast (все слышат всех)</td>
+    <td>Multicast (слушают только заинтересованные)</td>
+  </tr>
+  <tr>
+    <td><b>Протокол</b></td>
+    <td>Отдельный (EtherType 0x0806)</td>
+    <td>Часть ICMPv6 (Типы 135, 136)</td>
+  </tr>
+  <tr>
+    <td><b>Проверка на конфликт</b></td>
+    <td>ARP Probe (RFC 5227)</td>
+    <td>Duplicate Address Detection (DAD)</td>
+  </tr>
+  <tr>
+    <td><b>Поиск роутера</b></td>
+    <td>Только через шлюз по умолчанию</td>
+    <td>Router Advertisement (автоматический поиск)</td>
+  </tr>
+</tbody>
+</table><br>
+<h3>Список использованных стандартов (RFC):</h3>
+    <li>[RFC 826] — An Ethernet Address Resolution Protocol. David C. Plummer (1982). Статус: Standard 37 (Базовая спецификация протокола).
+    <li>[RFC 903] — A Reverse Address Resolution Protocol. Finlayson, Mann, Mogul, Theisen (1984). Статус: Elective (RARP — ныне устаревший предшественник DHCP).
+    <li>[RFC 1027] — Using ARP to Implement Transparent Subnet Gateways. S. Carl-Mitchell, J. Quarterman (1987). Статус: Informational (Описание технологии Proxy ARP).
+    <li>[RFC 1122] — Requirements for Internet Hosts - Communication Layers. R. Braden (1989). Статус: Standard (Уточнение правил работы ARP в стеке хоста).
+    <li>[RFC 2390] — Inverse Address Resolution Protocol. T. Bradley, C. Brown, A. Malis (1998). Статус: Draft Standard (Протокол Inverse ARP).
+    <li>[RFC 4861] — Neighbor Discovery for IP version 6 (IPv6). T. Narten, E. Nordmark, W. Simpson, H. Soliman (2007). Статус: Draft Standard (Замена ARP в сетях IPv6).
+    <li>[RFC 4907] — Architectural Implications of Link Layer Address Resolution. J. Abel, E. Davies (2007). Статус: Informational (Анализ безопасности и архитектурных проблем).
+    <li>[RFC 5227] — IPv4 Address Conflict Detection. S. Cheshire (2008). Статус: Proposed Standard (Механизмы ARP Probe и Announcement).
+    <li>[RFC 5494] — IANA Allocation Guidelines for the Address Resolution Protocol. R. Despres (2009). Статус: Proposed Standard (Регламент распределения типов оборудования и кодов операций).<br>
+    <h3>Приложение 1. Список кодов поля <i>hwtype</i> </h3>
+    <table>
+    <tr>
+        <td>Число</td>
+        <td>Тип аппаратного адреса (hrd)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>0</td>
+        <td>Reserved</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>1</td>
+        <td>Ethernet (10Mb)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>2</td>
+        <td>Experimental Ethernet (3Mb)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>Amateur Radio AX.25</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>4</td>
+        <td>Proteon ProNET Token Ring</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>5</td>
+        <td>Chaos</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>6</td>
+        <td>IEEE 802 Networks</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>7</td>
+        <td>ARCNET</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>8</td>
+        <td>Hyperchannel</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>9</td>
+        <td>Lanstar</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>10</td>
+        <td>Autonet Short Address</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>11</td>
+        <td>LocalTalk</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>12</td>
+        <td>LocalNet (IBM PCNet or SYTEK LocalNET)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>13</td>
+        <td>Ultra link</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>14</td>
+        <td>SMDS</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>15</td>
+        <td>Frame Relay</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>16</td>
+        <td>Asynchronous Transmission Mode (ATM)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>17</td>
+        <td>HDLC</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>18</td>
+        <td>Fibre Channel</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>19</td>
+        <td>Asynchronous Transmission Mode (ATM)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>20</td>
+        <td>Serial Line</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>21</td>
+        <td>Asynchronous Transmission Mode (ATM)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>22</td>
+        <td>MIL-STD-188-220</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>23</td>
+        <td>Metricom</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>24</td>
+        <td>IEEE 1394.1995</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>25</td>
+        <td>MAPOS</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>26</td>
+        <td>Twinaxial</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>27</td>
+        <td>EUI-64</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>28</td>
+        <td>HIPARP</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>29</td>
+        <td>IP and ARP over ISO 7816-3</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>30</td>
+        <td>ARPSec</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>31</td>
+        <td>IPsec tunnel</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>32</td>
+        <td>InfiniBand (TM)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>33</td>
+        <td>TIA-102 Project 25 Common Air Interface (CAI)</td>
+    </tr>
+    <tr>
+        <td>34</td>
+        <td>Wiegand Interface</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>35</td>
+        <td>Pure IP</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>36</td>
+        <td>HW_EXP1</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>37</td>
+        <td>HFI</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>38</td>
+        <td>Unified Bus (UB)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>39-255</td>
+        <td>Unassigned</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>256</td>
+        <td>HW_EXP2</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>257</td>
+        <td>AEthernet</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>258-65534</td>
+        <td>Unassigned</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>65535</td>
+        <td>Reserved</td>
+        <td></td>
+    </tr>
 </table>
